@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"runtime"
 	"strconv"
 	"syscall"
@@ -138,6 +139,13 @@ func initLogrus(stderr io.Writer) {
 	// HostAgent logging is one level more verbose than the start command itself
 	if logrus.GetLevel() == logrus.DebugLevel {
 		logrus.SetLevel(logrus.TraceLevel)
+		logrus.SetReportCaller(true)
+		logrus.SetFormatter(&logrus.TextFormatter{
+			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+				filename := path.Base(f.File)
+				return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
+			},
+		})
 	} else {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
