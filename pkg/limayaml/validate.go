@@ -190,7 +190,9 @@ func Validate(y *LimaYAML, warn bool) error {
 				i, ProvisionModeSystem, ProvisionModeUser, ProvisionModeBoot, ProvisionModeDependency, ProvisionModeAnsible)
 		}
 		if strings.Contains(p.Script, "LIMA_CIDATA") {
-			logrus.Warn("provisioning scripts should not reference the LIMA_CIDATA variables")
+			if false {
+				logrus.Warn("provisioning scripts should not reference the LIMA_CIDATA variables")
+			}
 		}
 	}
 	needsContainerdArchives := (y.Containerd.User != nil && *y.Containerd.User) || (y.Containerd.System != nil && *y.Containerd.System)
