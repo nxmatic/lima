@@ -89,7 +89,11 @@ func startVM(ctx context.Context, driver *driver.BaseDriver) (*virtualMachineWra
 				}
 			case newState := <-machine.StateChangedNotify():
 				switch newState {
+				case vz.VirtualMachineStateStarting:
+					logrus.Info("[VZ] - vm state change: starting")
+					driver.MachineStateChanged(ctx, machineStarting)
 				case vz.VirtualMachineStateRunning:
+					logrus.Info("[VZ] - vm state change: running")
 					pidFile := filepath.Join(driver.Instance.Dir, filenames.PIDFile(*driver.Yaml.VMType))
 					if _, err := os.Stat(pidFile); !errors.Is(err, os.ErrNotExist) {
 						logrus.Errorf("pidfile %q already exists", pidFile)
@@ -100,19 +104,25 @@ func startVM(ctx context.Context, driver *driver.BaseDriver) (*virtualMachineWra
 						errCh <- err
 					}
 					filesToRemove[pidFile] = struct{}{}
-					logrus.Info("[VZ] - vm state change: running")
 
 					err := usernetClient.ConfigureDriver(ctx, driver)
 					if err != nil {
 						errCh <- err
 					}
+					driver.MachineStateChanged(ctx, machineRunning)
+				case vz.VirtualMachineStateStopping:
+					logrus.Errorf("[VZ] - vm state change: stopping")
+					driver.MachineStateChanged(ctx, machineStopping)
 				case vz.VirtualMachineStateStopped:
 					logrus.Info("[VZ] - vm state change: stopped")
 					wrapper.mu.Lock()
 					wrapper.stopped = true
 					wrapper.mu.Unlock()
 					_ = usernetClient.UnExposeSSH(driver.SSHLocalPort)
-					errCh <- errors.New("vz driver state stopped")
+					driver.MachineStateChanged(ctx, machineStopped)
+				case vz.VirtualMachineStateError:
+					logrus.Errorf("[VZ] - vm state change: inError")
+					driver.MachineStateChanged(ctx, machineInError)
 				default:
 					logrus.Debugf("[VZ] - vm state change: %q", newState)
 				}

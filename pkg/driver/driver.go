@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"reflect"
 
 	"github.com/lima-vm/lima/pkg/limayaml"
 	"github.com/lima-vm/lima/pkg/store"
@@ -11,6 +12,51 @@ import (
 
 // Driver interface is used by hostagent for managing vm.
 //
+
+// MachineState represents the state of the driver.
+type MachineState string
+
+const (
+	MachineStarting MachineState = "starting"
+	MachineRunning  MachineState = "started"
+	MachineStopped  MachineState = "stopped"
+	MachineStopping MachineState = "stopping"
+	MachineInError  MachineState = "inError"
+)
+
+type MachineStateSupport struct {
+	driver  Driver
+	ErrorCh chan error
+	StateCh chan MachineState
+}
+
+func NewMachineStateSupport(ctx context.Context, driver Driver) (context.Context, *MachineStateSupport, error) {
+	stateCh := make(chan MachineState, 1)
+	stateCh <- MachineStarting
+	if !driver.SupportsStateChannel() {
+		// fake the MachineStarting state
+		go func() {
+			stateCh <- MachineRunning
+			close(stateCh)
+		}()
+	}
+
+	support := &MachineStateSupport{
+		driver:  driver,
+		StateCh: stateCh,
+		ErrorCh: nil,
+	}
+	ctx = context.WithValue(ctx, reflect.TypeOf(support), support)
+
+	errorCh, err := driver.Start(ctx)
+	if err != nil {
+		return ctx, nil, err
+	}
+	support.ErrorCh = errorCh
+
+	return ctx, support, nil
+}
+
 // This interface is extended by BaseDriver which provides default implementation.
 // All other driver definition must extend BaseDriver.
 type Driver interface {
@@ -32,6 +78,8 @@ type Driver interface {
 	// It returns a chan error on successful boot
 	// The second argument may contain error occurred while starting driver
 	Start(_ context.Context) (chan error, error)
+
+	SupportsStateChannel() bool
 
 	// CanRunGUI returns bool to indicate if the hostagent need to run GUI synchronously
 	CanRunGUI() bool
@@ -96,6 +144,18 @@ func (d *BaseDriver) CreateDisk(_ context.Context) error {
 
 func (d *BaseDriver) Start(_ context.Context) (chan error, error) {
 	return nil, nil
+}
+
+func (d *BaseDriver) SupportsStateChannel() bool {
+	return false
+}
+
+func (d *BaseDriver) MachineStateChanged(ctx context.Context, state MachineState) {
+	support := &MachineStateSupport{}
+	support, ok := ctx.Value(reflect.TypeOf(support)).(*MachineStateSupport)
+	if ok {
+		support.StateCh <- state
+	}
 }
 
 func (d *BaseDriver) CanRunGUI() bool {

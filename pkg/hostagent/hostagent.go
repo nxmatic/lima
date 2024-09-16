@@ -325,7 +325,7 @@ func (a *HostAgent) Run(ctx context.Context) error {
 		defer dnsServer.Shutdown()
 	}
 
-	errCh, err := a.driver.Start(ctx)
+	ctx, machineStateSupport, err := driver.NewMachineStateSupport(ctx, a.driver)
 	if err != nil {
 		return err
 	}
@@ -385,17 +385,28 @@ func (a *HostAgent) Run(ctx context.Context) error {
 
 	if a.driver.CanRunGUI() {
 		go func() {
-			err = a.startRoutinesAndWait(ctx, errCh)
+			err = a.onMachineStarted(ctx, *machineStateSupport)
 			if err != nil {
 				logrus.Error(err)
 			}
 		}()
 		return a.driver.RunGUI()
 	}
-	return a.startRoutinesAndWait(ctx, errCh)
+	return a.onMachineStarted(ctx, *machineStateSupport)
 }
 
-func (a *HostAgent) startRoutinesAndWait(ctx context.Context, errCh chan error) error {
+func (a *HostAgent) onMachineStarted(ctx context.Context, mss driver.MachineStateSupport) error {
+	for state := range mss.StateCh {
+		switch state {
+		case driver.MachineRunning:
+			logrus.Debugf("Machine started, starting routines on port: `%d`", a.sshLocalPort)
+			a.startRoutinesAndWait(ctx, mss)
+		}
+	}
+	return nil
+}
+
+func (a *HostAgent) startRoutinesAndWait(ctx context.Context, mss driver.MachineStateSupport) error {
 	stBase := events.Status{
 		SSHLocalPort: a.sshLocalPort,
 	}
@@ -404,16 +415,18 @@ func (a *HostAgent) startRoutinesAndWait(ctx context.Context, errCh chan error) 
 	ctxHA, cancelHA := context.WithCancel(ctx)
 	go func() {
 		stRunning := stBase
+		logrus.Info("Starting host agent routines")
 		if haErr := a.startHostAgentRoutines(ctxHA); haErr != nil {
 			stRunning.Degraded = true
 			stRunning.Errors = append(stRunning.Errors, haErr.Error())
 		}
 		stRunning.Running = true
+		logrus.Info("Host agent routines started, emitting event")
 		a.emitEvent(ctx, events.Event{Status: stRunning})
 	}()
 	for {
 		select {
-		case driverErr := <-errCh:
+		case driverErr := <-mss.ErrorCh:
 			logrus.Infof("Driver stopped due to error: %q", driverErr)
 			cancelHA()
 			if closeErr := a.close(); closeErr != nil {
@@ -432,7 +445,6 @@ func (a *HostAgent) startRoutinesAndWait(ctx context.Context, errCh chan error) 
 		}
 	}
 }
-
 func (a *HostAgent) Info(_ context.Context) (*hostagentapi.Info, error) {
 	info := &hostagentapi.Info{
 		SSHLocalPort: a.sshLocalPort,

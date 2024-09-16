@@ -58,6 +58,12 @@ var knownYamlProperties = []string{
 
 const Enabled = true
 
+const machineStarting = driver.MachineStarting
+const machineRunning = driver.MachineRunning
+const machineStopping = driver.MachineStopping
+const machineStopped = driver.MachineStopped
+const machineInError = driver.MachineInError
+
 type LimaVzDriver struct {
 	*driver.BaseDriver
 
@@ -68,6 +74,10 @@ func New(driver *driver.BaseDriver) *LimaVzDriver {
 	return &LimaVzDriver{
 		BaseDriver: driver,
 	}
+}
+
+func (l *LimaVzDriver) Super(_ context.Context) driver.BaseDriver {
+	return *l.BaseDriver
 }
 
 func (l *LimaVzDriver) Validate() error {
@@ -168,6 +178,10 @@ func (l *LimaVzDriver) Start(ctx context.Context) (chan error, error) {
 	l.machine = vm
 
 	return errCh, nil
+}
+
+func (l *LimaVzDriver) SupportsStateChannel() bool {
+	return true
 }
 
 func (l *LimaVzDriver) CanRunGUI() bool {
