@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "go: minimal build (debug)",
+            "type": "shell",
+            "command": ".vscode/pre-build-debug.sh",
+            "options": {
+                "cwd": "${workspaceFolder:lima}",
+                "env": {
+                    "CC": "/usr/bin/clang",
+                },
+            },
+            "presentation": {
+                "reveal": "silent",
+                "focus": false
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+        }
+    ]
+}

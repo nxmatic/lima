@@ -1,0 +1,55 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes. 
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to Process",
+            "type": "go",
+            "request": "attach",
+            "mode": "local",
+            "processId": "${command:pickProcess}",
+        },
+    
+        {
+            "name": "limactl hostagent sandbox",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec",
+            "program": "${workspaceFolder:lima}/_output/bin/limactl",
+            "args": [
+                "hostagent",
+                "--debug",
+                "--pidfile",
+                "/Users/stephane.lacoin/.lima/nerd/ha.pid",
+                "--socket",
+                "/Users/stephane.lacoin/.lima/nerd/ha.sock",
+                "sandbox"
+            ],
+            "stopOnEntry": false,
+            "trace": "trace",
+            "preLaunchTask": "go: minimal build (debug)",
+            "env": {
+                "LIMA_DEBUG": "nerd",
+                "LIMA_DEBUG_LEVEL": "debug",
+                "LIMA_DEBUG_LOG": "/Users/stephane.lacoin/.lima/nerd/ha.log",
+            }
+        },
+        {
+            "name": "limactl start nerd",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec",
+            "program": "${workspaceFolder:lima}/_output/bin/limactl",
+            "args": [
+                "--debug",
+                "start",
+                "nerd"
+            ],
+            "stopOnEntry": false,
+            "trace": "trace",
+            "preLaunchTask": "go: minimal build (debug)",
+        }
+    ],
+}
