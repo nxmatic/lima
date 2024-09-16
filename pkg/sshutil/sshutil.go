@@ -262,7 +262,7 @@ func SSHOpts(instDir string, useDotSSH, forwardAgent, forwardX11, forwardX11Trus
 // SSHArgsFromOpts returns ssh args from opts.
 // The result always contains {"-F", "/dev/null} in addition to {"-o", "KEY=VALUE", ...}.
 func SSHArgsFromOpts(opts []string) []string {
-	args := []string{"-F", "/dev/null"}
+	args := []string{"-v", "-F", "/dev/null"}
 	for _, o := range opts {
 		args = append(args, "-o", o)
 	}
