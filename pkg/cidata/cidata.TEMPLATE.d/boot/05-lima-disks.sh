@@ -19,6 +19,8 @@ for i in $(seq 0 $((LIMA_CIDATA_DISKS - 1))); do
 	test -n "$FORMAT_DISK" || FORMAT_DISK=true
 	test -n "$FORMAT_FSTYPE" || FORMAT_FSTYPE=ext4
 
+	[[ "$FORMAT_FSTYPE" == "zfs" ]] && continue
+
 	# first time setup
 	if [[ ! -b "/dev/disk/by-label/lima-${DISK_NAME}" ]]; then
 		if $FORMAT_DISK; then
