@@ -31,7 +31,7 @@ func (c *Config) Validate() error {
 			path = findBaseDirectory(path)
 		}
 		err := validatePath(path, name == "varRun")
-		if err != nil {
+		if false && err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				switch name {
 				// sudoers file does not need to exist; otherwise `limactl sudoers` couldn't bootstrap

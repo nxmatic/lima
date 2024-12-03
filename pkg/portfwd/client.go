@@ -120,6 +120,9 @@ func (g GrpcClientRW) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
+	if g.stream == nil {
+		return 0, fmt.Errorf("stream is nil")
+	}
 	err = g.stream.Send(&api.TunnelMessage{
 		Id:        g.id,
 		GuestAddr: g.addr,
@@ -133,6 +136,9 @@ func (g GrpcClientRW) Write(p []byte) (n int, err error) {
 }
 
 func (g GrpcClientRW) Read(p []byte) (n int, err error) {
+	if g.stream == nil {
+		return 0, fmt.Errorf("stream is nil")
+	}
 	in, err := g.stream.Recv()
 	if errors.Is(err, io.EOF) {
 		return 0, nil

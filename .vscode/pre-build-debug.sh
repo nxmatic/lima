@@ -5,7 +5,7 @@ path+=( _output/bin )
 lima:stop() {
     name=${1:-nerd}
     
-    limactl ls --json nerd | 
+    limactl ls --json $name | 
         jq -r 'select(.status == "Running") |.name' | 
         xargs -I {} limactl stop {}
 }
@@ -15,4 +15,4 @@ lima:remake:minimal:debug() {
 }
 
 lima:remake:minimal:debug
-lima:stop ${LIMAC_INSTANCE:-nerd}
+lima:stop ${LIMAC_INSTANCE:-nixos}

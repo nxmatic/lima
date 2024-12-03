@@ -45,12 +45,18 @@ PACKAGE := github.com/lima-vm/lima
 
 VERSION := $(shell git describe --match 'v[0-9]*' --dirty='.m' --always --tags)
 VERSION_TRIMMED := $(VERSION:v%=%)
-
-GO_BUILD_LDFLAGS := -ldflags="-s -w -X $(PACKAGE)/pkg/version.Version=$(VERSION)"
+# Check if GO_DEBUG is set
+ifdef GO_DEBUG
+    GO_BUILD_GCFLAGS := -gcflags="all=-N -l"
+    GO_BUILD_LDFLAGS := -ldflags="-X $(PACKAGE)/pkg/version.Version=$(VERSION)"
+else
+    GO_BUILD_GCFLAGS := 
+    GO_BUILD_LDFLAGS := -ldflags="-s -w -X $(PACKAGE)/pkg/version.Version=$(VERSION)"
+endif
 # `go -version -m` returns -tags with comma-separated list, because space-separated list is deprecated in go1.13.
 # converting to comma-separated list is useful for comparing with the output of `go version -m`.
 GO_BUILD_FLAG_TAGS := $(addprefix -tags=,$(shell echo "$(GO_BUILDTAGS)"|tr " " "\n"|paste -sd "," -))
-GO_BUILD := $(GO) build $(GO_BUILD_LDFLAGS) $(GO_BUILD_FLAG_TAGS)
+GO_BUILD := $(GO) build $(GO_BUILD_GCFLAGS) $(GO_BUILD_LDFLAGS) $(GO_BUILD_FLAG_TAGS)
 
 ################################################################################
 # Features

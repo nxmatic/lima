@@ -13,7 +13,7 @@
         },
     
         {
-            "name": "limactl hostagent sandbox",
+            "name": "limactl hostagent nixos",
             "type": "go",
             "request": "launch",
             "mode": "exec",
@@ -22,11 +22,10 @@
                 "hostagent",
                 "--debug",
                 "--pidfile",
-                "/Users/stephane.lacoin/.lima/nerd/ha.pid",
+                "/Users/stephane.lacoin/.lima/nixos/ha.pid",
                 "--socket",
-                "/Users/stephane.lacoin/.lima/nerd/ha.sock",
-                "sandbox"
-            ],
+                "/Users/stephane.lacoin/.lima/nixos/ha.sock",
+                "nixos"],
             "stopOnEntry": false,
             "trace": "trace",
             "preLaunchTask": "go: minimal build (debug)",
@@ -45,7 +44,7 @@
             "args": [
                 "--debug",
                 "start",
-                "nerd"
+                "nerd-debian"
             ],
             "stopOnEntry": false,
             "trace": "trace",
